@@ -1,0 +1,4 @@
+-r requirements.txt
+pyobjc-core
+pyobjc-framework-Quartz
+pyobjc-framework-AppKit
