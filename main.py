@@ -19,7 +19,7 @@ import sys
 
 from hand_tracker import HandTracker
 from calibration import Calibrator
-from window_manager import get_window_at, get_window_info, focus_window
+from platform_utils import get_window_at, get_window_info, focus_window, set_cursor_pos, mouse_click, get_all_monitors
 from voice_input import VoiceInput
 
 # States
@@ -113,8 +113,7 @@ class StarkControl:
                     if gesture == "open_palm":
                         # Move cursor
                         try:
-                            import win32api
-                            win32api.SetCursorPos((screen_x, screen_y))
+                            set_cursor_pos(screen_x, screen_y)
                         except Exception:
                             pass
                     elif gesture == "fist":
@@ -164,15 +163,7 @@ class StarkControl:
     def _do_click(self, screen_x, screen_y):
         """Click at the screen position to focus the element under cursor."""
         try:
-            import win32api
-            import win32con
-            # Move cursor to position
-            win32api.SetCursorPos((screen_x, screen_y))
-            time.sleep(0.05)
-            # Click
-            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, screen_x, screen_y, 0, 0)
-            time.sleep(0.02)
-            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, screen_x, screen_y, 0, 0)
+            mouse_click(screen_x, screen_y)
             time.sleep(0.05)
 
             hwnd = get_window_at(screen_x, screen_y)
@@ -260,10 +251,9 @@ class StarkControl:
         scale = map_w / desk_w
 
         try:
-            import win32api
-            monitors = win32api.EnumDisplayMonitors()
+            monitors = get_all_monitors()
             for mon in monitors:
-                mx1, my1, mx2, my2 = mon[2]
+                mx1, my1, mx2, my2 = mon
                 rx1 = map_x + int((mx1 - left) * scale)
                 ry1 = map_y + int((my1 - top) * scale)
                 rx2 = map_x + int((mx2 - left) * scale)

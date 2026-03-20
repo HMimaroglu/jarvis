@@ -17,24 +17,11 @@ import numpy as np
 import json
 import os
 import time
-import ctypes
 from collections import deque
 
-try:
-    import win32api
-    import win32con
-except ImportError:
-    win32api = None
+from platform_utils import get_monitor_bounds, set_cursor_pos
 
 CALIBRATION_FILE = os.path.join(os.path.dirname(__file__), "calibration.json")
-
-
-def get_monitor_bounds():
-    """Get the bounds of the primary monitor."""
-    user32 = ctypes.windll.user32
-    w = user32.GetSystemMetrics(0)   # SM_CXSCREEN (primary width)
-    h = user32.GetSystemMetrics(1)   # SM_CYSCREEN (primary height)
-    return (0, 0, w, h)
 
 
 def get_calibration_points(margin=200):
@@ -83,8 +70,7 @@ class Calibrator:
             print(f"\n--- Point {i+1}/5: Move cursor to ({sx}, {sy}) ---")
 
             # Move cursor to target
-            if win32api:
-                win32api.SetCursorPos((sx, sy))
+            set_cursor_pos(sx, sy)
 
             confirmed = False
             position_history.clear()

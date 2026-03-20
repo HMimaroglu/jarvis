@@ -2,7 +2,13 @@ opencv-contrib-python==4.11.0.86
 mediapipe==0.10.21
 numpy<2
 pyautogui
-pywin32
 screeninfo
 faster-whisper
 sounddevice
+
+# Windows-only
+pywin32; sys_platform == "win32"
+
+# macOS-only
+pyobjc-framework-Quartz; sys_platform == "darwin"
+pyobjc-framework-AppKit; sys_platform == "darwin"

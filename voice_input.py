@@ -127,16 +127,8 @@ class VoiceInput:
             return
 
         try:
-            import subprocess
-            process = subprocess.Popen(
-                ["clip.exe"],
-                stdin=subprocess.PIPE,
-                shell=True,
-            )
-            process.communicate(text.encode("utf-16-le"))
-
-            time.sleep(0.05)
-            pyautogui.hotkey("ctrl", "v")
+            from platform_utils import clipboard_paste
+            clipboard_paste(text)
             time.sleep(0.05)
             pyautogui.press("enter")
         except Exception:
