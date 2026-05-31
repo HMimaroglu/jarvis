@@ -29,8 +29,8 @@ STATE_RECORDING = "RECORDING"   # fist closed, recording voice
 
 
 class StarkControl:
-    def __init__(self):
-        self.tracker = HandTracker()
+    def __init__(self, camera_index=None):
+        self.tracker = HandTracker(camera_index=camera_index)
         self.calibrator = Calibrator()
         self.voice = VoiceInput()
 
@@ -43,6 +43,8 @@ class StarkControl:
         self.dead_zone = 5
         self.last_cam_pos = None
         self.last_screen = (None, None)
+        self.hand_lost_frames = 0
+        self.hand_lost_grace = 15  # frames to wait before cancelling recording
 
     def run(self):
         # Load or run calibration
@@ -71,6 +73,7 @@ class StarkControl:
             screen_x, screen_y = None, None
 
             if result:
+                self.hand_lost_frames = 0
                 cam_x, cam_y = result["position"]
 
                 # Dead zone filter
@@ -130,13 +133,16 @@ class StarkControl:
 
             else:
                 # No hand detected
+                self.hand_lost_frames += 1
                 if self.state == STATE_RECORDING:
-                    # Hand left the screen — cancel recording
-                    self.voice.cancel_recording()
-                    self.state = STATE_IDLE
-                    print("Hand lost — recording cancelled.")
+                    if self.hand_lost_frames >= self.hand_lost_grace:
+                        # Hand truly gone — cancel recording
+                        self.voice.cancel_recording()
+                        self.state = STATE_IDLE
+                        print("Hand lost — recording cancelled.")
                 elif self.state == STATE_TRACKING:
-                    self.state = STATE_IDLE
+                    if self.hand_lost_frames >= self.hand_lost_grace:
+                        self.state = STATE_IDLE
 
             # Draw debug overlay
             self.tracker.draw_debug(frame, result)
@@ -276,7 +282,28 @@ class StarkControl:
 
 
 def main():
-    ctrl = StarkControl()
+    import argparse
+    parser = argparse.ArgumentParser(description="Stark Control - gesture-driven computer control")
+    parser.add_argument("--camera", type=int, default=None,
+                        help="Camera index to use (0, 1, etc.). Auto-detects if not specified.")
+    parser.add_argument("--list-cameras", action="store_true",
+                        help="List available cameras and exit.")
+    args = parser.parse_args()
+
+    if args.list_cameras:
+        print("Available cameras:")
+        for idx in range(10):
+            cap = cv2.VideoCapture(idx)
+            if cap.isOpened():
+                ret, _ = cap.read()
+                if ret:
+                    w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+                    h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                    print(f"  Index {idx}: {w}x{h} ({cap.getBackendName()})")
+                cap.release()
+        return
+
+    ctrl = StarkControl(camera_index=args.camera)
     ctrl.run()
 
 
